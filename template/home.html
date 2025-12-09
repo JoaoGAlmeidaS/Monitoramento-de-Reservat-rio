@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monitor ESP</title>
+    <style>
+        body { font-family: Arial; }
+        .box {
+            font-size: 40px;
+            padding: 20px;
+            border: 2px solid #333;
+            display: inline-block;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Dados do ESP</h1>
+
+<div class="box" id="temp">
+    Clique em "Atualizar" para carregar o dado.
+</div>
+
+<br><br>
+
+<button onclick="atualizar()" style="font-size: 20px;">Atualizar</button>
+
+<script>
+function atualizar() {
+
+    console.log("Buscando no backend...");
+
+    fetch("/monitor/", {
+        method: "GET",
+        cache: "no-store"  // força SEM CACHE
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        console.log("Resposta recebida:", data);
+
+        // Se não houver mensagem bruta, avisar
+        if (!data || !data.raw_message) {
+            document.getElementById("temp").innerHTML = `
+                <p style="font-size: 24px; color: red;">Nenhum dado recebido</p>
+            `;
+            return;
+        }
+
+        // Se os campos estiverem presentes, mostre cada um separadamente
+        if (data.devid || data.volume || data.umidade || data.temperatura || data.profundidade || data.timestamp) {
+            document.getElementById("temp").innerHTML = `
+                <div style="font-size:20px; text-align:left;">
+                    <div><strong>Dispositivo:</strong> ${data.devid ?? '-'} </div>
+                    <div><strong>Volume:</strong> ${data.volume ?? '-'} </div>
+                    <div><strong>Umidade:</strong> ${data.umidade ?? '-'} </div>
+                    <div><strong>Temperatura:</strong> ${data.temperatura ?? '-'} </div>
+                    <div><strong>Profundidade:</strong> ${data.profundidade ?? '-'} </div>
+                    <div><strong>Timestamp:</strong> ${data.timestamp ?? '-'} </div>
+                </div>
+            `;
+        } else {
+            // Caso não seja JSON parseável em campos esperados, mostra a mensagem bruta
+            document.getElementById("temp").innerHTML = `
+                <p style="font-size: 24px; color: green;">${data.raw_message}</p>
+            `;
+        }
+    })
+    .catch(err => {
+        console.error("Erro ao buscar:", err);
+    });
+}
+</script>
+
+</body>
+</html>
