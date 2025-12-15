@@ -25,6 +25,29 @@
 
 <button onclick="atualizar()" style="font-size: 20px;">Atualizar</button>
 
+<br><br>
+
+<h2>Histórico de Dados</h2>
+<button onclick="carregarHistorico()" style="font-size: 20px;">Carregar Histórico</button>
+<table id="history" border="1" style="width:100%; margin-top:20px;">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Dispositivo</th>
+            <th>Volume</th>
+            <th>Umidade</th>
+            <th>Temperatura</th>
+            <th>Profundidade</th>
+            <th>Timestamp</th>
+            <th>Mensagem Bruta</th>
+            <th>Criado em</th>
+        </tr>
+    </thead>
+    <tbody id="history-body">
+        <!-- Dados serão inseridos aqui -->
+    </tbody>
+</table>
+
 <script>
 function atualizar() {
 
@@ -38,6 +61,14 @@ function atualizar() {
     .then(data => {
 
         console.log("Resposta recebida:", data);
+
+        // Se houver erro, mostrar mensagem de erro
+        if (data.error) {
+            document.getElementById("temp").innerHTML = `
+                <p style="font-size: 24px; color: red;">${data.error}</p>
+            `;
+            return;
+        }
 
         // Se não houver mensagem bruta, avisar
         if (!data || !data.raw_message) {
@@ -68,6 +99,41 @@ function atualizar() {
     })
     .catch(err => {
         console.error("Erro ao buscar:", err);
+    });
+}
+
+function carregarHistorico() {
+    console.log("Carregando histórico...");
+
+    fetch("/monitor/data/", {
+        method: "GET",
+        cache: "no-store"
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Histórico recebido:", data);
+
+        const tbody = document.getElementById("history-body");
+        tbody.innerHTML = "";  // Limpar tabela
+
+        data.forEach(item => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${item.id}</td>
+                <td>${item.devid || '-'}</td>
+                <td>${item.volume || '-'}</td>
+                <td>${item.umidade || '-'}</td>
+                <td>${item.temperatura || '-'}</td>
+                <td>${item.profundidade || '-'}</td>
+                <td>${item.timestamp || '-'}</td>
+                <td>${item.raw_message || '-'}</td>
+                <td>${item.created_at}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    })
+    .catch(err => {
+        console.error("Erro ao carregar histórico:", err);
     });
 }
 </script>
