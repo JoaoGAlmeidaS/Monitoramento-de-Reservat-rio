@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exemplo Dashboard Bootstrap + Chart.js</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">📊 Meu Dashboard</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-people-fill"></i> Usuários</h5>
+                        <p class="card-text fs-2">1,245</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-currency-dollar"></i> Receita</h5>
+                        <p class="card-text fs-2">R$ 45.200</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-warning mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-box-seam"></i> Pedidos</h5>
+                        <p class="card-text fs-2">89</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <i class="bi bi-bar-chart-line"></i> Vendas por Mês
+                    </div>
+                    <div class="card-body">
+                        <canvas id="graficoBarras"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <i class="bi bi-pie-chart"></i> Fontes de Tráfego
+                    </div>
+                    <div class="card-body">
+                        <canvas id="graficoRosca"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <i class="bi bi-table"></i> Últimas Transações
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-bordered align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Data</th>
+                                        <th>Cliente</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>#1001</td>
+                                        <td>15/01/2026</td>
+                                        <td>Empresa Tech Ltda</td>
+                                        <td><span class="badge bg-success">Pago</span></td>
+                                        <td class="text-end">R$ 1.500,00</td>
+                                    </tr>
+                                    <tr>
+                                        <td>#1002</td>
+                                        <td>14/01/2026</td>
+                                        <td>Loja de Varejo S.A.</td>
+                                        <td><span class="badge bg-warning text-dark">Pendente</span></td>
+                                        <td class="text-end">R$ 3.250,00</td>
+                                    </tr>
+                                    <tr>
+                                        <td>#1003</td>
+                                        <td>14/01/2026</td>
+                                        <td>Consultoria Silva</td>
+                                        <td><span class="badge bg-danger">Cancelado</span></td>
+                                        <td class="text-end">R$ 800,00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Configuração do Gráfico de Barras
+        const ctxBarras = document.getElementById('graficoBarras').getContext('2d');
+        new Chart(ctxBarras, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                datasets: [{
+                    label: 'Vendas (R$)',
+                    data: [12000, 19000, 3000, 5000, 2000, 30000],
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // Permite ajustar altura pelo CSS/Container
+            }
+        });
+
+        // Configuração do Gráfico de Rosca
+        const ctxRosca = document.getElementById('graficoRosca').getContext('2d');
+        new Chart(ctxRosca, {
+            type: 'doughnut',
+            data: {
+                labels: ['Google', 'Redes Sociais', 'Direto', 'Email'],
+                datasets: [{
+                    data: [55, 25, 15, 5],
+                    backgroundColor: [
+                        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+            }
+        });
+    </script>
+</body>
+</html>

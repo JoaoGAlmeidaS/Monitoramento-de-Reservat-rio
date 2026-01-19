@@ -1,142 +1,347 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-    <title>Monitor ESP</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor ESP - Dashboard Interativo</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
     <style>
-        body { font-family: Arial; }
-        .box {
-            font-size: 40px;
-            padding: 20px;
-            border: 2px solid #333;
-            display: inline-block;
-            margin-top: 40px;
+        .chart-container {
+            position: relative;
+            height: 300px; 
+            width: 100%;
         }
     </style>
 </head>
-<body>
+<body class="bg-light">
 
-<h1>Dados do ESP</h1>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-cpu"></i> Monitor ESP
+            </span>
+            <div class="d-flex gap-2">
+                <button onclick="atualizar()" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-arrow-clockwise"></i> Atualizar Leitura
+                </button>
+                <button onclick="carregarHistorico()" class="btn btn-primary btn-sm">
+                    <i class="bi bi-database-down"></i> Carregar Histórico
+                </button>
+            </div>
+        </div>
+    </nav>
 
-<div class="box" id="temp">
-    Clique em "Atualizar" para carregar o dado.
-</div>
+    <div class="container">
+        
+        <div id="alerta-sistema"></div>
 
-<br><br>
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-danger mb-3 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-thermometer-half"></i> Temperatura</h5>
+                        <p class="card-text fs-2" id="kpi-temp">-- °C</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info mb-3 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-droplet-fill"></i> Umidade</h5>
+                        <p class="card-text fs-2" id="kpi-umid">-- %</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success mb-3 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-box-seam"></i> Volume</h5>
+                        <p class="card-text fs-2" id="kpi-vol">--</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-secondary mb-3 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-water"></i> Profundidade</h5>
+                        <p class="card-text fs-2" id="kpi-prof">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<button onclick="atualizar()" style="font-size: 20px;">Atualizar</button>
+        <div class="row mb-4">
+            
+            <div class="col-md-8">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <span id="titulo-grafico"><i class="bi bi-graph-up"></i> Histórico</span>
+                        
+                        <div class="btn-group btn-group-sm" role="group">
+                            <input type="radio" class="btn-check" name="btnradio" id="btn-temp" autocomplete="off" checked onclick="alterarVisualizacao('temp')">
+                            <label class="btn btn-outline-danger" for="btn-temp">Temperatura</label>
+                          
+                            <input type="radio" class="btn-check" name="btnradio" id="btn-umid" autocomplete="off" onclick="alterarVisualizacao('umid')">
+                            <label class="btn btn-outline-info" for="btn-umid">Umidade</label>
+                        </div>
 
-<br><br>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="graficoPrincipal"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white">
+                        <i class="bi bi-terminal"></i> Última Leitura (Detalhes)
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush" id="lista-detalhes">
+                            <li class="list-group-item text-muted">Aguardando atualização...</li>
+                        </ul>
+                        <div class="mt-3">
+                            <small class="text-muted fw-bold">Mensagem Bruta:</small>
+                            <div class="alert alert-secondary mt-1 p-2" style="font-family: monospace; font-size: 0.8em; word-break: break-all;" id="raw-message-box">
+                                ...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<h2>Histórico de Dados</h2>
-<button onclick="carregarHistorico()" style="font-size: 20px;">Carregar Histórico</button>
-<table id="history" border="1" style="width:100%; margin-top:20px;">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Dispositivo</th>
-            <th>Volume</th>
-            <th>Umidade</th>
-            <th>Temperatura</th>
-            <th>Profundidade</th>
-            <th>Timestamp</th>
-            <th>Mensagem Bruta</th>
-            <th>Criado em</th>
-        </tr>
-    </thead>
-    <tbody id="history-body">
-        <!-- Dados serão inseridos aqui -->
-    </tbody>
-</table>
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <i class="bi bi-table"></i> Histórico de Dados
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle" id="history-table">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Dispositivo</th>
+                                        <th>Volume</th>
+                                        <th>Umidade</th>
+                                        <th>Temp (°C)</th>
+                                        <th>Profundidade</th>
+                                        <th>Timestamp</th>
+                                        <th>Criado em</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-body">
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted">Clique em "Carregar Histórico" para ver os dados.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<script>
-function atualizar() {
+    </div>
 
-    console.log("Buscando no backend...");
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    fetch("/monitor/", {
-        method: "GET",
-        cache: "no-store"  // força SEM CACHE
-    })
-    .then(res => res.json())
-    .then(data => {
+    <script>
+        // --- 1. Variáveis Globais e Inicialização ---
+        let chartInstance = null;
+        let historicoCache = []; // Armazena os dados vindos do backend para não precisar buscar de novo ao trocar o gráfico
+        let visualizacaoAtual = 'temp'; // 'temp' ou 'umid'
 
-        console.log("Resposta recebida:", data);
+        // Inicia o gráfico vazio
+        function initChart() {
+            const ctx = document.getElementById('graficoPrincipal').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Selecione uma opção',
+                        data: [],
+                        borderColor: '#ccc',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        initChart();
 
-        // Se houver erro, mostrar mensagem de erro
-        if (data.error) {
-            document.getElementById("temp").innerHTML = `
-                <p style="font-size: 24px; color: red;">${data.error}</p>
-            `;
-            return;
+        // --- 2. Função de Alternância do Gráfico (FINAL) ---
+        function alterarVisualizacao(modo) {
+            visualizacaoAtual = modo;
+
+            if (historicoCache.length === 0) {
+                return;
+            }
+
+            // 1. Cria cópia invertida (Antigo -> Novo)
+            const dadosTotal = [...historicoCache].reverse();
+
+            // 2. FILTRAGEM DE DADOS NULOS
+            const dadosFiltrados = dadosTotal.filter(item => {
+                if (modo === 'temp') {
+                    // Verifica se temperatura existe (não é null, undefined ou string vazia)
+                    return item.timestamp && item.temperatura != null && item.temperatura !== "";
+                } else if (modo === 'umid') {
+                    return item.timestamp && item.umidade != null && item.umidade !== "";
+                }
+                return false;
+            });
+
+            // 3. Separação dos Arrays
+            const labels = dadosFiltrados.map(d => d.timestamp || d.created_at);
+            
+            let datasetData = [];
+            let label = '';
+            let colorBorder = '';
+            let colorBg = '';
+
+            if (modo === 'temp') {
+                datasetData = dadosFiltrados.map(d => d.temperatura);
+                label = 'Temperatura (°C)';
+                colorBorder = 'rgba(220, 53, 69, 1)';   // Vermelho Forte
+                colorBg = 'rgba(220, 53, 69, 0.2)';     // Vermelho Transparente (Fundo)
+            } else if (modo === 'umid') {
+                datasetData = dadosFiltrados.map(d => d.umidade);
+                label = 'Umidade (%)';
+                colorBorder = 'rgba(13, 202, 240, 1)';  // Azul Forte
+                colorBg = 'rgba(13, 202, 240, 0.2)';    // Azul Transparente (Fundo)
+            }
+
+            // 4. Atualiza o Gráfico
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets[0].label = label;
+            chartInstance.data.datasets[0].data = datasetData;
+            
+            // Cores
+            chartInstance.data.datasets[0].borderColor = colorBorder;
+            chartInstance.data.datasets[0].backgroundColor = colorBg;
+
+            // ESTÉTICA (Aqui corrigimos o visual)
+            chartInstance.data.datasets[0].fill = true;   // <--- Volta a preencher o fundo
+            chartInstance.data.datasets[0].tension = 0.4; // <--- Deixa a linha curva (suave)
+            chartInstance.data.datasets[0].pointRadius = 3; // Tamanho da bolinha no ponto
+            
+            chartInstance.update();
         }
 
-        // Se não houver mensagem bruta, avisar
-        if (!data || !data.raw_message) {
-            document.getElementById("temp").innerHTML = `
-                <p style="font-size: 24px; color: red;">Nenhum dado recebido</p>
-            `;
-            return;
-        }
 
-        // Se os campos estiverem presentes, mostre cada um separadamente
-        if (data.devid || data.volume || data.umidade || data.temperatura || data.profundidade || data.timestamp) {
-            document.getElementById("temp").innerHTML = `
-                <div style="font-size:20px; text-align:left;">
-                    <div><strong>Dispositivo:</strong> ${data.devid ?? '-'} </div>
-                    <div><strong>Volume:</strong> ${data.volume ?? '-'} </div>
-                    <div><strong>Umidade:</strong> ${data.umidade ?? '-'} </div>
-                    <div><strong>Temperatura:</strong> ${data.temperatura ?? '-'} </div>
-                    <div><strong>Profundidade:</strong> ${data.profundidade ?? '-'} </div>
-                    <div><strong>Timestamp:</strong> ${data.timestamp ?? '-'} </div>
+        // --- 3. Funções de Rede (Fetch) ---
+
+        function mostrarAlerta(mensagem, tipo = 'danger') {
+            const divAlertas = document.getElementById('alerta-sistema');
+            divAlertas.innerHTML = `
+                <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+                    ${mensagem}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             `;
-        } else {
-            // Caso não seja JSON parseável em campos esperados, mostra a mensagem bruta
-            document.getElementById("temp").innerHTML = `
-                <p style="font-size: 24px; color: green;">${data.raw_message}</p>
-            `;
         }
-    })
-    .catch(err => {
-        console.error("Erro ao buscar:", err);
-    });
-}
 
-function carregarHistorico() {
-    console.log("Carregando histórico...");
+        function atualizar() {
+            document.getElementById('raw-message-box').innerText = "Carregando...";
 
-    fetch("/monitor/data/", {
-        method: "GET",
-        cache: "no-store"
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log("Histórico recebido:", data);
+            fetch("/monitor/", { method: "GET", cache: "no-store" })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) { mostrarAlerta(data.error, 'danger'); return; }
+                if (!data) { mostrarAlerta("Nenhum dado recebido", 'warning'); return; }
 
-        const tbody = document.getElementById("history-body");
-        tbody.innerHTML = "";  // Limpar tabela
+                document.getElementById('kpi-temp').innerText = (data.temperatura !== undefined ? data.temperatura + ' °C' : '--');
+                document.getElementById('kpi-umid').innerText = (data.umidade !== undefined ? data.umidade + ' %' : '--');
+                document.getElementById('kpi-vol').innerText = (data.volume !== undefined ? data.volume : '--');
+                document.getElementById('kpi-prof').innerText = (data.profundidade !== undefined ? data.profundidade : '--');
 
-        data.forEach(item => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${item.id}</td>
-                <td>${item.devid || '-'}</td>
-                <td>${item.volume || '-'}</td>
-                <td>${item.umidade || '-'}</td>
-                <td>${item.temperatura || '-'}</td>
-                <td>${item.profundidade || '-'}</td>
-                <td>${item.timestamp || '-'}</td>
-                <td>${item.raw_message || '-'}</td>
-                <td>${item.created_at}</td>
-            `;
-            tbody.appendChild(row);
-        });
-    })
-    .catch(err => {
-        console.error("Erro ao carregar histórico:", err);
-    });
-}
-</script>
+                const listaDetalhes = document.getElementById('lista-detalhes');
+                listaDetalhes.innerHTML = `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        ID Dispositivo: <span class="badge bg-dark rounded-pill">${data.devid ?? '-'}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Timestamp: <span>${data.timestamp ?? '-'}</span>
+                    </li>
+                `;
+                document.getElementById('raw-message-box').innerText = data.raw_message || "Nenhuma mensagem bruta disponível";
+                mostrarAlerta("Leitura atualizada!", "success");
+            })
+            .catch(err => {
+                console.error(err);
+                mostrarAlerta("Erro de conexão.", 'danger');
+            });
+        }
+
+        function carregarHistorico() {
+            const tbody = document.getElementById("history-body");
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">Carregando dados...</td></tr>';
+
+            fetch("/monitor/data/", { method: "GET", cache: "no-store" })
+            .then(res => res.json())
+            .then(data => {
+                // 1. Salva no Cache Global
+                historicoCache = data; 
+                
+                tbody.innerHTML = ""; 
+
+                if(data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhum histórico encontrado.</td></tr>';
+                    return;
+                }
+
+                // 2. Preenche a tabela
+                data.forEach(item => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${item.id}</td>
+                        <td><span class="badge bg-secondary">${item.devid || '-'}</span></td>
+                        <td>${item.volume || '-'}</td>
+                        <td>${item.umidade || '-'}</td>
+                        <td>${item.temperatura || '-'}</td>
+                        <td>${item.profundidade || '-'}</td>
+                        <td><small>${item.timestamp || '-'}</small></td>
+                        <td><small>${item.created_at || '-'}</small></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // 3. Renderiza o gráfico com a visualização selecionada (Temp ou Umid)
+                alterarVisualizacao(visualizacaoAtual);
+
+                mostrarAlerta("Histórico carregado.", "success");
+            })
+            .catch(err => {
+                console.error(err);
+                mostrarAlerta("Erro ao carregar histórico.", 'danger');
+            });
+        }
+    </script>
 
 </body>
 </html>

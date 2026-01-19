@@ -3,6 +3,8 @@ from django.http import JsonResponse
 from . import mqtt_client
 from .models import SensorData
 import json
+from datetime import datetime
+from django.utils import timezone
 
 # Create your views here.
 def monitor_view(request):
@@ -28,54 +30,41 @@ def monitor_view(request):
     try:
         parsed = json.loads(raw)
         if isinstance(parsed, dict):
+            dados_internos = parsed.get("data", {})
+
             response['devid'] = parsed.get("devid")
-            response['volume'] = parsed.get("volume")
-            response['umidade'] = parsed.get("umidade")
-            response['temperatura'] = parsed.get("temperatura")
-            response['profundidade'] = parsed.get("profundidade")
-            response['timestamp'] = parsed.get("timestamp")
+
+            response['volume'] = dados_internos.get("adc")
+            response['umidade'] = dados_internos.get("var0")
+            response['temperatura'] = dados_internos.get("var1")
+            response['profundidade'] = dados_internos.get("adc")
+            response['timestamp'] = dados_internos.get("timestamp")
             return JsonResponse(response, status=200)
     except (json.JSONDecodeError, TypeError):
         pass  # Não é JSON, tentar CSV
 
     # Tentar parse como CSV
     try:
-        # Limpa linhas vazias
-        lines = [l for l in raw.splitlines() if l.strip()]
-        if len(lines) > 0:
-            first = lines[0].strip()
-            if ',' in first:
-                # Detecta se a primeira linha é cabeçalho
-                header_lower = first.lower()
-                if ('devid' in header_lower) or ('volume' in header_lower) or ('temperatura' in header_lower):
-                    # Cabeçalho presente
-                    if len(lines) >= 2:
-                        headers = [h.strip() for h in first.split(',')]
-                        values = [v.strip() for v in lines[1].split(',')]
-                    else:
-                        headers = []
-                        values = []
-                else:
-                    # Sem cabeçalho — assumimos a ordem conhecida
-                    headers = ['devid', 'volume', 'umidade', 'temperatura', 'profundidade', 'timestamp']
-                    values = [v.strip() for v in first.split(',')]
+        first = raw.strip()
 
-                # Mapear valores para o dicionário de resposta
-                if headers and values and len(headers) == len(values):
-                    mapped = dict(zip(headers, values))
-                    response['devid'] = mapped.get('devid')
-                    # Para números, tentar converter para float quando aplicável
-                    for key in ('volume', 'umidade', 'temperatura', 'profundidade'):
-                        val = mapped.get(key)
-                        if val is not None and val != '':
-                            try:
-                                response[key] = float(val)
-                            except ValueError:
-                                response[key] = val
-                    response['timestamp'] = mapped.get('timestamp')
-                    return JsonResponse(response, status=200)
+        if ';' in first:
+            parts = [p.strip() for p in first.split(';')]
+
+            if len(parts) == 3:
+                unix_ts, nivel, volume = parts
+
+                timestamp = timezone.make_aware(
+                    datetime.fromtimestamp(int(unix_ts)),
+                    timezone.get_current_timezone()
+                )
+
+                response['timestamp'] = timestamp
+                response['profundidade'] = float(nivel)
+                response['volume'] = float(volume)
+
+                return JsonResponse(response, status=200)
     except Exception:
-        pass  # Falha ao parsear CSV
+        pass
 
     # Se chegou aqui, não é JSON nem CSV válido
     response["error"] = "Formato Inválido"
